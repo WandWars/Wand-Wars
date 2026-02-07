@@ -375,6 +375,8 @@
                         event: 'player-joined',
                         payload: { playerId: myId }
                     });
+                    // Joiner goes directly to character select after joining
+                    showCharacterSelect();
                 });
             }
 
@@ -387,7 +389,7 @@
                 channel.on('broadcast', { event: 'player-joined' }, function () {
                     document.getElementById('host-status').textContent = 'Opponent connected!';
                     // Send welcome message back to joiner
-                    setTimeout(function() {
+                    setTimeout(function () {
                         channel.send({
                             type: 'broadcast',
                             event: 'host-welcome',
@@ -425,7 +427,6 @@
 
                 channel.subscribe(function (status) {
                     if (status === 'SUBSCRIBED') {
-                        console.log('Supabase channel subscribed:', roomId);
                         if (onReady) onReady();
                     }
                 });
