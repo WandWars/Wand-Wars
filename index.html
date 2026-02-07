@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>⚡ WAND WARS ⚡</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <style>
         * {
             margin: 0;
@@ -568,6 +570,16 @@
         let winner = null;
         let beamLock = null; // for priori incantatem
 
+        // ========================= MULTIPLAYER STATE =========================
+        let isOnlineMode = false;
+        let isHost = false;
+        let roomId = null;
+        let mpChannel = null;
+        let mpSupabase = null;
+        let myPlayerNum = 0; // 0 = P1 (left), 1 = P2 (right)
+        let remoteState = null; // received from opponent
+        let lastSyncTime = 0;
+
         // Key tracking - only preventDefault during gameplay to avoid blocking UI
         addEventListener('keydown', e => {
             keys[e.key.toLowerCase()] = true; keys[e.code] = true;
@@ -645,17 +657,27 @@
                 if (this.state !== 'hit' && this.state !== 'dead') {
                     const speed = 320;
                     let mx = 0, my = 0;
-                    if (this.pNum === 0) {
-                        if (keys['a'] || keys['KeyA']) mx = -1;
-                        if (keys['d'] || keys['KeyD']) mx = 1;
-                        if (keys['w'] || keys['KeyW']) my = -1;
-                        if (keys['s'] || keys['KeyS']) my = 1;
-                    } else {
-                        if (keys['arrowleft']) mx = -1;
-                        if (keys['arrowright']) mx = 1;
-                        if (keys['arrowup']) my = -1;
-                        if (keys['arrowdown']) my = 1;
+
+                    // In online mode: only control your own character with arrows
+                    // In local mode: P1 uses WASD, P2 uses arrows
+                    const isMyCharacter = isOnlineMode ? (this.pNum === myPlayerNum) : true;
+
+                    if (isMyCharacter) {
+                        if (isOnlineMode || this.pNum === 1) {
+                            // Online mode OR local P2: use arrow keys
+                            if (keys['arrowleft']) mx = -1;
+                            if (keys['arrowright']) mx = 1;
+                            if (keys['arrowup']) my = -1;
+                            if (keys['arrowdown']) my = 1;
+                        } else {
+                            // Local P1: use WASD
+                            if (keys['a'] || keys['KeyA']) mx = -1;
+                            if (keys['d'] || keys['KeyD']) mx = 1;
+                            if (keys['w'] || keys['KeyW']) my = -1;
+                            if (keys['s'] || keys['KeyS']) my = 1;
+                        }
                     }
+
                     if (mx || my) {
                         if (this.state !== 'cast') this.state = 'walk';
                         this.x += mx * speed * dt;
@@ -672,13 +694,27 @@
 
                 // Spell input
                 if (this.state !== 'hit' && this.state !== 'dead') {
-                    const spellKeys = this.pNum === 0
-                        ? ['q', 'e', 'r', 'f']
-                        : ['j', 'k', 'l', ';'];
-                    for (let i = 0; i < 4; i++) {
-                        if (keys[spellKeys[i]] && this.cooldowns[i] <= 0) {
-                            this.castSpellAction(i);
-                            keys[spellKeys[i]] = false; // consume
+                    // In online mode: only control your own character with JKL;
+                    // In local mode: P1 uses QERF, P2 uses JKL;
+                    const isMyCharacter = isOnlineMode ? (this.pNum === myPlayerNum) : true;
+
+                    if (isMyCharacter) {
+                        const spellKeys = (isOnlineMode || this.pNum === 1)
+                            ? ['j', 'k', 'l', ';']
+                            : ['q', 'e', 'r', 'f'];
+                        for (let i = 0; i < 4; i++) {
+                            if (keys[spellKeys[i]] && this.cooldowns[i] <= 0) {
+                                this.castSpellAction(i);
+                                keys[spellKeys[i]] = false; // consume
+                                // Broadcast spell cast in online mode
+                                if (isOnlineMode && mpChannel) {
+                                    mpChannel.send({
+                                        type: 'broadcast',
+                                        event: 'spell-cast',
+                                        payload: { spellIdx: i }
+                                    });
+                                }
+                            }
                         }
                     }
                 }
@@ -1790,6 +1826,15 @@
         function showVictory(winIdx) {
             winner = winIdx;
             STATE = 'victory';
+
+            // Broadcast game over in online mode (host is authoritative)
+            if (isOnlineMode && isHost && mpChannel) {
+                mpChannel.send({
+                    type: 'broadcast',
+                    event: 'game-over',
+                    payload: { winner: winIdx }
+                });
+            }
             setTimeout(() => {
                 document.getElementById('hud').classList.remove('active');
                 document.getElementById('ui-overlay').classList.add('menu-active');
@@ -1820,6 +1865,101 @@
             }, 2000);
         }
 
+        // ========================= MULTIPLAYER SYNC =========================
+        function setupMultiplayer() {
+            if (!window.supabase || !window.SUPABASE_CONFIG) return;
+
+            mpSupabase = window.supabase.createClient(
+                window.SUPABASE_CONFIG.url,
+                window.SUPABASE_CONFIG.key
+            );
+
+            mpChannel = mpSupabase.channel('game-' + roomId, {
+                config: { broadcast: { self: false } }
+            });
+
+            // Receive opponent's position updates
+            mpChannel.on('broadcast', { event: 'state' }, function (msg) {
+                remoteState = msg.payload;
+            });
+
+            // Receive opponent's spell casts
+            mpChannel.on('broadcast', { event: 'spell-cast' }, function (msg) {
+                const opponentNum = 1 - myPlayerNum;
+                if (fighters[opponentNum] && fighters[opponentNum].alive) {
+                    fighters[opponentNum].castSpellAction(msg.payload.spellIdx);
+                }
+            });
+
+            // Receive HP sync from host
+            mpChannel.on('broadcast', { event: 'hp-sync' }, function (msg) {
+                if (!isHost && fighters[0] && fighters[1]) {
+                    fighters[0].hp = msg.payload.p1hp;
+                    fighters[1].hp = msg.payload.p2hp;
+                    fighters[0].alive = msg.payload.p1hp > 0;
+                    fighters[1].alive = msg.payload.p2hp > 0;
+                }
+            });
+
+            // Receive game over
+            mpChannel.on('broadcast', { event: 'game-over' }, function (msg) {
+                if (winner === null) {
+                    showVictory(msg.payload.winner);
+                }
+            });
+
+            mpChannel.subscribe();
+        }
+
+        function sendMyState() {
+            if (!isOnlineMode || !mpChannel || !fighters[myPlayerNum]) return;
+
+            const now = Date.now();
+            if (now - lastSyncTime < 50) return; // Throttle to 20Hz
+            lastSyncTime = now;
+
+            const f = fighters[myPlayerNum];
+            mpChannel.send({
+                type: 'broadcast',
+                event: 'state',
+                payload: {
+                    x: f.x,
+                    y: f.y,
+                    facing: f.facing,
+                    state: f.state,
+                    hp: f.hp,
+                    shieldActive: f.shield.active
+                }
+            });
+
+            // Host broadcasts HP sync
+            if (isHost) {
+                mpChannel.send({
+                    type: 'broadcast',
+                    event: 'hp-sync',
+                    payload: {
+                        p1hp: fighters[0].hp,
+                        p2hp: fighters[1].hp
+                    }
+                });
+            }
+        }
+
+        function applyRemoteState() {
+            if (!isOnlineMode || !remoteState) return;
+
+            const opponentNum = 1 - myPlayerNum;
+            const f = fighters[opponentNum];
+            if (!f) return;
+
+            // Smoothly interpolate position
+            f.x += (remoteState.x - f.x) * 0.3;
+            f.y += (remoteState.y - f.y) * 0.3;
+            f.facing = remoteState.facing;
+            f.state = remoteState.state;
+            f.shield.active = remoteState.shieldActive;
+        }
+
         // ========================= MAIN GAME LOOP =========================
         let lastTime = 0;
         function gameLoop(timestamp) {
@@ -1847,6 +1987,12 @@
                 // ---- UPDATE & DRAW FIGHTERS ----
                 if (STATE === 'fight') {
                     for (const f of fighters) f.update(dt);
+
+                    // Multiplayer sync
+                    if (isOnlineMode) {
+                        sendMyState();
+                        applyRemoteState();
+                    }
                 }
 
                 // Sort by Y for depth
@@ -1916,8 +2062,16 @@
             const params = new URLSearchParams(window.location.search);
             const p1Id = params.get('p1');
             const p2Id = params.get('p2');
+            const roomParam = params.get('room');
+            const hostParam = params.get('host');
 
-            if (p1Id && p2Id) {
+            if (p1Id && p2Id && roomParam) {
+                // Set up online multiplayer mode
+                isOnlineMode = true;
+                roomId = roomParam;
+                isHost = (hostParam === '1');
+                myPlayerNum = isHost ? 0 : 1; // Host is P1 (left), Joiner is P2 (right)
+
                 // Find characters by ID
                 const char1 = CHARS.find(c => c.id === p1Id);
                 const char2 = CHARS.find(c => c.id === p2Id);
@@ -1925,6 +2079,10 @@
                 if (char1 && char2) {
                     p1Pick = char1;
                     p2Pick = char2;
+
+                    // Set up multiplayer connection
+                    setupMultiplayer();
+
                     // Auto-start the fight
                     setTimeout(function () {
                         beginFight();
