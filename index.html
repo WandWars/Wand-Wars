@@ -1858,7 +1858,7 @@
                 <div>💀 Defeated: ${loser.char.name}</div>
                 <div>⏱️ Fight Duration: ${Math.floor(gameTime)}s</div>
             </div>
-            <button class="btn" onclick="document.getElementById('victory-screen').remove();beginFight()">⚔ REMATCH</button>
+            <button class="btn" onclick="requestRematch()">⚔ REMATCH</button>
             <button class="btn" style="font-size:1vw;padding:10px 30px" onclick="location.href='${isOnlineMode ? 'multiplayer.html' : 'index.html'}'">MAIN MENU</button>
         `;
                 overlay.appendChild(vs);
@@ -1906,6 +1906,11 @@
                 if (winner === null) {
                     showVictory(msg.payload.winner);
                 }
+            });
+
+            // Receive rematch request - redirect to new room
+            mpChannel.on('broadcast', { event: 'rematch' }, function (msg) {
+                window.location.href = 'multiplayer.html?room=' + msg.payload.newRoomId;
             });
 
             mpChannel.subscribe();
@@ -1958,6 +1963,27 @@
             f.facing = remoteState.facing;
             f.state = remoteState.state;
             f.shield.active = remoteState.shieldActive;
+        }
+
+        function requestRematch() {
+            if (isOnlineMode && mpChannel) {
+                // Generate new room ID for rematch
+                const newRoomId = 'WW' + Math.random().toString(36).substr(2, 5).toUpperCase();
+
+                // Broadcast rematch to opponent
+                mpChannel.send({
+                    type: 'broadcast',
+                    event: 'rematch',
+                    payload: { newRoomId: newRoomId }
+                });
+
+                // Redirect self to new room
+                window.location.href = 'multiplayer.html?room=' + newRoomId;
+            } else {
+                // Local mode: just restart with same characters
+                document.getElementById('victory-screen').remove();
+                beginFight();
+            }
         }
 
         // ========================= MAIN GAME LOOP =========================
