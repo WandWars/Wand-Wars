@@ -383,8 +383,23 @@
                     config: { broadcast: { self: false } }
                 });
 
+                // Host receives this when joiner connects
                 channel.on('broadcast', { event: 'player-joined' }, function () {
                     document.getElementById('host-status').textContent = 'Opponent connected!';
+                    // Send welcome message back to joiner
+                    setTimeout(function() {
+                        channel.send({
+                            type: 'broadcast',
+                            event: 'host-welcome',
+                            payload: { hostId: myId }
+                        });
+                    }, 500);
+                    showCharacterSelect();
+                });
+
+                // Joiner receives this when host acknowledges
+                channel.on('broadcast', { event: 'host-welcome' }, function () {
+                    document.getElementById('lobby-status').textContent = 'Connected!';
                     showCharacterSelect();
                 });
 
@@ -410,6 +425,7 @@
 
                 channel.subscribe(function (status) {
                     if (status === 'SUBSCRIBED') {
+                        console.log('Supabase channel subscribed:', roomId);
                         if (onReady) onReady();
                     }
                 });
