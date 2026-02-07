@@ -1858,8 +1858,8 @@
                 <div>💀 Defeated: ${loser.char.name}</div>
                 <div>⏱️ Fight Duration: ${Math.floor(gameTime)}s</div>
             </div>
-            <button class="btn" onclick="goToSelect();document.getElementById('victory-screen').remove()">DUEL AGAIN</button>
-            <button class="btn" style="font-size:1vw;padding:10px 30px" onclick="location.reload()">MAIN MENU</button>
+            <button class="btn" onclick="document.getElementById('victory-screen').remove();beginFight()">⚔ REMATCH</button>
+            <button class="btn" style="font-size:1vw;padding:10px 30px" onclick="location.href='${isOnlineMode ? 'multiplayer.html' : 'index.html'}'">MAIN MENU</button>
         `;
                 overlay.appendChild(vs);
             }, 2000);
