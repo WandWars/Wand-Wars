@@ -2049,9 +2049,13 @@
 
                 // ---- CHECK VICTORY ----
                 if (STATE === 'fight') {
-                    for (let i = 0; i < 2; i++) {
-                        if (!fighters[i].alive && winner === null) {
-                            showVictory(1 - i);
+                    // Only host checks for victory in online mode
+                    // Joiner receives game-over via broadcast
+                    if (!isOnlineMode || isHost) {
+                        for (let i = 0; i < 2; i++) {
+                            if (!fighters[i].alive && winner === null) {
+                                showVictory(1 - i);
+                            }
                         }
                     }
                 }
