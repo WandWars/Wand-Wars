@@ -1,0 +1,1918 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ WAND WARS ⚡</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Segoe UI', sans-serif;
+            user-select: none
+        }
+
+        canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 0
+        }
+
+        #ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10
+        }
+
+        #ui-overlay.menu-active {
+            pointer-events: auto
+        }
+
+        .screen {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 11
+        }
+
+        .screen.active {
+            display: flex
+        }
+
+        #title-screen {
+            background: radial-gradient(ellipse at center, #1a0a2e 0%, #0a0412 70%, #000 100%);
+            z-index: 12
+        }
+
+        .title-main {
+            font-family: 'Georgia', serif;
+            font-size: 5vw;
+            font-weight: 900;
+            color: #ffd700;
+            text-shadow: 0 0 40px rgba(255, 215, 0, 0.6), 0 0 80px rgba(255, 215, 0, 0.3);
+            letter-spacing: 8px;
+            animation: pulse 3s ease-in-out infinite
+        }
+
+        .title-sub {
+            font-size: 2vw;
+            color: #b8860b;
+            letter-spacing: 12px;
+            margin-top: 10px;
+            text-shadow: 0 0 20px rgba(184, 134, 11, 0.5)
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                text-shadow: 0 0 40px rgba(255, 215, 0, 0.6), 0 0 80px rgba(255, 215, 0, 0.3)
+            }
+
+            50% {
+                text-shadow: 0 0 60px rgba(255, 215, 0, 0.8), 0 0 120px rgba(255, 215, 0, 0.5)
+            }
+        }
+
+        .btn {
+            font-family: 'Georgia', serif;
+            font-size: 1.3vw;
+            padding: 15px 60px;
+            border: 2px solid #daa520;
+            background: rgba(26, 10, 46, 0.8);
+            color: #ffd700;
+            cursor: pointer;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-top: 40px;
+            transition: all 0.3s;
+            pointer-events: auto
+        }
+
+        .btn:hover {
+            background: rgba(218, 165, 32, 0.2);
+            box-shadow: 0 0 30px rgba(218, 165, 32, 0.4);
+            transform: scale(1.05)
+        }
+
+        #select-screen {
+            background: radial-gradient(ellipse at center, #1a0a2e 0%, #0a0412 70%, #000 100%);
+            padding: 20px;
+            gap: 15px;
+            z-index: 12
+        }
+
+        .sel-title {
+            font-family: 'Georgia', serif;
+            font-size: 2.5vw;
+            color: #ffd700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.4)
+        }
+
+        .sel-panels {
+            display: flex;
+            gap: 30px;
+            width: 90%;
+            max-width: 1200px
+        }
+
+        .sel-panel {
+            flex: 1;
+            background: rgba(10, 4, 18, 0.8);
+            border: 2px solid rgba(218, 165, 32, 0.3);
+            border-radius: 12px;
+            padding: 15px
+        }
+
+        .sel-panel h3 {
+            text-align: center;
+            color: #daa520;
+            font-size: 1.2vw;
+            margin-bottom: 10px
+        }
+
+        .char-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px
+        }
+
+        .ccard {
+            background: rgba(40, 20, 60, 0.6);
+            border: 2px solid rgba(100, 80, 120, 0.3);
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            pointer-events: auto
+        }
+
+        .ccard:hover {
+            border-color: rgba(218, 165, 32, 0.6);
+            transform: translateY(-2px)
+        }
+
+        .ccard.picked {
+            border-color: #ffd700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3)
+        }
+
+        .ccard canvas {
+            display: block;
+            margin: 0 auto 5px
+        }
+
+        .ccard .cname {
+            font-size: 0.8vw;
+            color: #e0d5c1;
+            font-weight: 700
+        }
+
+        .ccard .chouse {
+            font-size: 0.6vw;
+            color: #b8860b;
+            letter-spacing: 1px
+        }
+
+        .ccard .cspells {
+            font-size: 0.55vw;
+            color: #888;
+            margin-top: 3px
+        }
+
+        .controls-hint {
+            font-size: 0.8vw;
+            color: #888;
+            text-align: center;
+            margin-top: 5px;
+            pointer-events: none
+        }
+
+        #hud {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 8px 20px;
+            display: none;
+            z-index: 20;
+            pointer-events: none
+        }
+
+        #hud.active {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start
+        }
+
+        .hud-player {
+            width: 35%
+        }
+
+        .hud-name {
+            font-size: 1vw;
+            font-weight: 700;
+            margin-bottom: 4px;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8)
+        }
+
+        .hud-name.p1 {
+            color: #ff6b6b
+        }
+
+        .hud-name.p2 {
+            color: #6bc5ff;
+            text-align: right
+        }
+
+        .hp-outer {
+            width: 100%;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative
+        }
+
+        .hp-inner {
+            height: 100%;
+            transition: width 0.3s;
+            border-radius: 2px
+        }
+
+        .hp-inner.p1 {
+            background: linear-gradient(90deg, #d32f2f, #ef5350)
+        }
+
+        .hp-inner.p2 {
+            background: linear-gradient(90deg, #1976d2, #42a5f5)
+        }
+
+        .hp-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 0.7vw;
+            color: #fff;
+            font-weight: 700;
+            text-shadow: 1px 1px 2px #000
+        }
+
+        .cd-bar {
+            display: flex;
+            gap: 4px;
+            margin-top: 4px
+        }
+
+        .cd-slot {
+            flex: 1;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative
+        }
+
+        .cd-fill {
+            height: 100%;
+            border-radius: 1px;
+            transition: width 0.1s
+        }
+
+        .cd-key {
+            position: absolute;
+            top: 50%;
+            left: 3px;
+            transform: translateY(-50%);
+            font-size: 7px;
+            color: rgba(255, 255, 255, 0.6)
+        }
+
+        .hud-center {
+            color: #ffd700;
+            font-size: 1.2vw;
+            font-weight: 700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+            min-width: 100px;
+            text-align: center;
+            padding-top: 5px
+        }
+
+        #countdown {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Georgia', serif;
+            font-size: 12vw;
+            color: #ffd700;
+            text-shadow: 0 0 60px rgba(255, 215, 0, 0.8);
+            z-index: 30;
+            display: none;
+            pointer-events: none
+        }
+
+        #hit-flash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0;
+            transition: opacity 0.1s
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="game-canvas"></canvas>
+    <div id="hit-flash"></div>
+    <div id="ui-overlay" class="menu-active">
+        <div id="title-screen" class="screen active">
+            <div class="title-main">WAND WARS</div>
+            <div class="title-sub">THE WIZARDING DUEL</div>
+            <button class="btn" onclick="window.location.href='multiplayer.html'">🌐 ONLINE DUEL</button>
+            <button class="btn" style="margin-top:15px" onclick="window.location.href='singleplayer.html'">🤖 SINGLE
+                PLAYER</button>
+        </div>
+        <div id="select-screen" class="screen">
+            <div class="sel-title">⚔ CHOOSE YOUR WIZARDS ⚔</div>
+            <div class="sel-panels">
+                <div class="sel-panel">
+                    <h3 style="color:#ff6b6b">⚡ PLAYER 1 — WASD + Q E R F</h3>
+                    <div class="char-grid" id="p1grid"></div>
+                </div>
+                <div class="sel-panel">
+                    <h3 style="color:#6bc5ff">⚡ PLAYER 2 — ARROWS + J K L ;</h3>
+                    <div class="char-grid" id="p2grid"></div>
+                </div>
+            </div>
+            <button class="btn" onclick="beginFight()">⚡ FIGHT ⚡</button>
+            <div class="controls-hint">P1: WASD move | Q=Quick E=Power R=Shield F=Ultimate &nbsp;&nbsp; P2: Arrows move
+                | J=Quick K=Power L=Shield ;=Ultimate</div>
+        </div>
+    </div>
+    <div id="hud">
+        <div class="hud-player">
+            <div class="hud-name p1" id="hud-p1-name">Player 1</div>
+            <div class="hp-outer">
+                <div class="hp-inner p1" id="hud-p1-hp" style="width:100%"></div>
+                <div class="hp-text" id="hud-p1-hptxt">100/100</div>
+            </div>
+            <div class="cd-bar" id="hud-p1-cd"></div>
+        </div>
+        <div class="hud-center" id="hud-center">VS</div>
+        <div class="hud-player">
+            <div class="hud-name p2" id="hud-p2-name">Player 2</div>
+            <div class="hp-outer">
+                <div class="hp-inner p2" id="hud-p2-hp" style="width:100%"></div>
+                <div class="hp-text" id="hud-p2-hptxt">100/100</div>
+            </div>
+            <div class="cd-bar" id="hud-p2-cd"></div>
+        </div>
+    </div>
+    <div id="countdown"></div>
+
+    <script>
+        // =============================================================
+        //  WAND WARS — Real-Time Canvas Fighting Game
+        // =============================================================
+        const CVS = document.getElementById('game-canvas');
+        const X = CVS.getContext('2d');
+        let W, H;
+        function resize() { W = CVS.width = innerWidth; H = CVS.height = innerHeight; }
+        resize();
+        addEventListener('resize', resize);
+
+        // ========================= AUDIO =========================
+        const ACtx = new (AudioContext || webkitAudioContext)();
+        function sfx(type) {
+            const o = ACtx.createOscillator(), g = ACtx.createGain();
+            o.connect(g); g.connect(ACtx.destination);
+            const t = ACtx.currentTime;
+            switch (type) {
+                case 'quick':
+                    o.type = 'sawtooth'; o.frequency.setValueAtTime(800, t); o.frequency.exponentialRampToValueAtTime(200, t + 0.12);
+                    g.gain.setValueAtTime(0.12, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+                    o.start(t); o.stop(t + 0.15); break;
+                case 'power':
+                    o.type = 'sawtooth'; o.frequency.setValueAtTime(300, t); o.frequency.exponentialRampToValueAtTime(80, t + 0.25);
+                    g.gain.setValueAtTime(0.18, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+                    o.start(t); o.stop(t + 0.35); break;
+                case 'shield':
+                    o.type = 'triangle'; o.frequency.setValueAtTime(400, t); o.frequency.exponentialRampToValueAtTime(800, t + 0.15);
+                    g.gain.setValueAtTime(0.1, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+                    o.start(t); o.stop(t + 0.25); break;
+                case 'ultimate':
+                    o.type = 'sawtooth'; o.frequency.setValueAtTime(100, t); o.frequency.exponentialRampToValueAtTime(1200, t + 0.3);
+                    o.frequency.exponentialRampToValueAtTime(50, t + 0.7);
+                    g.gain.setValueAtTime(0.22, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.8);
+                    o.start(t); o.stop(t + 0.8);
+                    const o2 = ACtx.createOscillator(), g2 = ACtx.createGain();
+                    o2.connect(g2); g2.connect(ACtx.destination); o2.type = 'square';
+                    o2.frequency.setValueAtTime(60, t); o2.frequency.exponentialRampToValueAtTime(40, t + 0.6);
+                    g2.gain.setValueAtTime(0.1, t); g2.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+                    o2.start(t); o2.stop(t + 0.7); break;
+                case 'hit':
+                    o.type = 'square'; o.frequency.setValueAtTime(200, t); o.frequency.exponentialRampToValueAtTime(60, t + 0.1);
+                    g.gain.setValueAtTime(0.15, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+                    o.start(t); o.stop(t + 0.15); break;
+                case 'death':
+                    o.type = 'sawtooth'; o.frequency.setValueAtTime(300, t); o.frequency.exponentialRampToValueAtTime(20, t + 1.5);
+                    g.gain.setValueAtTime(0.2, t); g.gain.exponentialRampToValueAtTime(0.001, t + 1.5);
+                    o.start(t); o.stop(t + 1.5); break;
+                case 'select':
+                    o.type = 'sine'; o.frequency.setValueAtTime(600, t); o.frequency.exponentialRampToValueAtTime(900, t + 0.08);
+                    g.gain.setValueAtTime(0.06, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+                    o.start(t); o.stop(t + 0.12); break;
+                case 'countdown':
+                    o.type = 'sine'; o.frequency.setValueAtTime(440, t); o.frequency.exponentialRampToValueAtTime(880, t + 0.15);
+                    g.gain.setValueAtTime(0.15, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+                    o.start(t); o.stop(t + 0.3); break;
+                case 'fight':
+                    o.type = 'sawtooth'; o.frequency.setValueAtTime(440, t);
+                    o.frequency.exponentialRampToValueAtTime(880, t + 0.2);
+                    g.gain.setValueAtTime(0.2, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+                    o.start(t); o.stop(t + 0.5); break;
+            }
+        }
+
+        // ========================= CHARACTER DEFINITIONS =========================
+        const CHARS = [
+            {
+                id: 'harry', name: 'Harry Potter', house: 'Gryffindor', hp: 130,
+                robeColor: '#740001', robeAccent: '#D3A625', hairColor: '#1a1a1a', skinColor: '#f0c8a0',
+                hairStyle: 'messy', hasGlasses: true, scarOnForehead: true,
+                spells: [
+                    { name: 'Expelliarmus', key: 'quick', dmg: 12, speed: 10, cd: 0.8, color: '#ef5350', size: 8, trail: '#ff8a80' },
+                    { name: 'Stupefy', key: 'power', dmg: 28, speed: 7, cd: 2.0, color: '#ff5722', size: 14, trail: '#ff8a65' },
+                    { name: 'Protego', key: 'shield', dmg: 0, speed: 0, cd: 3.0, color: '#4fc3f7', size: 0, shieldDur: 1.5, shieldStr: 0.8 },
+                    { name: 'Expecto Patronum', key: 'ultimate', dmg: 50, speed: 12, cd: 8.0, color: '#e0e0e0', size: 25, trail: '#ffffff', isUlt: true }
+                ]
+            },
+            {
+                id: 'hermione', name: 'Hermione Granger', house: 'Gryffindor', hp: 110,
+                robeColor: '#740001', robeAccent: '#D3A625', hairColor: '#5d3a1a', skinColor: '#f0c8a0',
+                hairStyle: 'bushy', hasGlasses: false,
+                spells: [
+                    { name: 'Petrificus Totalus', key: 'quick', dmg: 11, speed: 11, cd: 0.7, color: '#90a4ae', size: 7, trail: '#b0bec5' },
+                    { name: 'Incendio', key: 'power', dmg: 32, speed: 6, cd: 2.2, color: '#ff3d00', size: 16, trail: '#ff6e40', burn: true },
+                    { name: 'Protego Maxima', key: 'shield', dmg: 0, speed: 0, cd: 2.8, color: '#64b5f6', size: 0, shieldDur: 2.0, shieldStr: 0.9 },
+                    { name: 'Firestorm', key: 'ultimate', dmg: 55, speed: 8, cd: 9.0, color: '#ff3d00', size: 30, trail: '#ff6d00', isUlt: true, burn: true }
+                ]
+            },
+            {
+                id: 'ron', name: 'Ron Weasley', house: 'Gryffindor', hp: 140,
+                robeColor: '#740001', robeAccent: '#D3A625', hairColor: '#c0440e', skinColor: '#f5d0b0',
+                hairStyle: 'shaggy', hasGlasses: false,
+                spells: [
+                    { name: 'Stupefy', key: 'quick', dmg: 10, speed: 9, cd: 0.9, color: '#ff7043', size: 8, trail: '#ffab91' },
+                    { name: 'Confringo', key: 'power', dmg: 30, speed: 7, cd: 2.0, color: '#ff5722', size: 15, trail: '#ff8a65' },
+                    { name: 'Protego', key: 'shield', dmg: 0, speed: 0, cd: 3.0, color: '#4fc3f7', size: 0, shieldDur: 1.5, shieldStr: 0.7 },
+                    { name: 'Weasley Fury', key: 'ultimate', dmg: 48, speed: 10, cd: 7.5, color: '#ff6d00', size: 22, trail: '#ffab40', isUlt: true }
+                ]
+            },
+            {
+                id: 'dumbledore', name: 'Dumbledore', house: 'Gryffindor', hp: 160,
+                robeColor: '#4a148c', robeAccent: '#ce93d8', hairColor: '#e0e0e0', skinColor: '#f0c8a0',
+                hairStyle: 'longbeard', hasGlasses: true, hasHat: true,
+                spells: [
+                    { name: 'Immobulus', key: 'quick', dmg: 14, speed: 11, cd: 0.8, color: '#81d4fa', size: 9, trail: '#b3e5fc' },
+                    { name: 'Fiendfyre', key: 'power', dmg: 38, speed: 6, cd: 2.5, color: '#ff3d00', size: 20, trail: '#dd2c00', burn: true },
+                    { name: 'Elder Shield', key: 'shield', dmg: 0, speed: 0, cd: 3.5, color: '#ffd54f', size: 0, shieldDur: 2.5, shieldStr: 0.95 },
+                    { name: 'Elder Wand Storm', key: 'ultimate', dmg: 65, speed: 10, cd: 10.0, color: '#ffd700', size: 30, trail: '#ffecb3', isUlt: true }
+                ]
+            },
+            {
+                id: 'voldemort', name: 'Lord Voldemort', house: 'Slytherin', hp: 150,
+                robeColor: '#1a1a1a', robeAccent: '#4a148c', hairColor: null, skinColor: '#d4c8b8',
+                hairStyle: 'bald', hasGlasses: false, redEyes: true, noNose: true,
+                spells: [
+                    { name: 'Crucio', key: 'quick', dmg: 15, speed: 10, cd: 0.8, color: '#ab47bc', size: 9, trail: '#ce93d8' },
+                    { name: 'Sectumsempra', key: 'power', dmg: 35, speed: 8, cd: 2.0, color: '#ef5350', size: 14, trail: '#e57373', bleed: true },
+                    { name: 'Dark Shield', key: 'shield', dmg: 0, speed: 0, cd: 3.2, color: '#7b1fa2', size: 0, shieldDur: 1.8, shieldStr: 0.85 },
+                    { name: 'Avada Kedavra', key: 'ultimate', dmg: 70, speed: 14, cd: 9.0, color: '#00e676', size: 20, trail: '#69f0ae', isUlt: true }
+                ]
+            },
+            {
+                id: 'snape', name: 'Severus Snape', house: 'Slytherin', hp: 125,
+                robeColor: '#1a1a1a', robeAccent: '#1a1a1a', hairColor: '#0a0a0a', skinColor: '#ddd0c0',
+                hairStyle: 'greasy', hasGlasses: false,
+                spells: [
+                    { name: 'Sectumsempra', key: 'quick', dmg: 14, speed: 10, cd: 0.8, color: '#ef5350', size: 8, trail: '#e57373', bleed: true },
+                    { name: 'Levicorpus', key: 'power', dmg: 26, speed: 9, cd: 1.8, color: '#b0bec5', size: 12, trail: '#cfd8dc' },
+                    { name: 'Occlumency', key: 'shield', dmg: 0, speed: 0, cd: 3.0, color: '#78909c', size: 0, shieldDur: 2.0, shieldStr: 0.85 },
+                    { name: 'Half-Blood Fury', key: 'ultimate', dmg: 55, speed: 11, cd: 8.5, color: '#7b1fa2', size: 24, trail: '#ab47bc', isUlt: true }
+                ]
+            },
+            {
+                id: 'bellatrix', name: 'Bellatrix Lestrange', house: 'Slytherin', hp: 115,
+                robeColor: '#1a1a1a', robeAccent: '#4a0072', hairColor: '#1a1a1a', skinColor: '#e0d0c0',
+                hairStyle: 'wild', hasGlasses: false,
+                spells: [
+                    { name: 'Crucio', key: 'quick', dmg: 16, speed: 11, cd: 0.7, color: '#e91e63', size: 8, trail: '#f48fb1' },
+                    { name: 'Confringo', key: 'power', dmg: 34, speed: 7, cd: 2.0, color: '#ff3d00', size: 16, trail: '#ff6e40' },
+                    { name: 'Dark Shield', key: 'shield', dmg: 0, speed: 0, cd: 3.0, color: '#9c27b0', size: 0, shieldDur: 1.2, shieldStr: 0.7 },
+                    { name: 'Killing Frenzy', key: 'ultimate', dmg: 60, speed: 13, cd: 8.0, color: '#00e676', size: 22, trail: '#76ff03', isUlt: true }
+                ]
+            },
+            {
+                id: 'draco', name: 'Draco Malfoy', house: 'Slytherin', hp: 120,
+                robeColor: '#1A472A', robeAccent: '#5D5D5D', hairColor: '#f5f5dc', skinColor: '#f5e0cc',
+                hairStyle: 'slicked', hasGlasses: false,
+                spells: [
+                    { name: 'Serpensortia', key: 'quick', dmg: 11, speed: 10, cd: 0.8, color: '#66bb6a', size: 8, trail: '#a5d6a7' },
+                    { name: 'Densaugeo', key: 'power', dmg: 27, speed: 8, cd: 1.9, color: '#ffab40', size: 13, trail: '#ffd54f' },
+                    { name: 'Impedimenta', key: 'shield', dmg: 0, speed: 0, cd: 2.8, color: '#4fc3f7', size: 0, shieldDur: 1.5, shieldStr: 0.75 },
+                    { name: 'Dark Mark Strike', key: 'ultimate', dmg: 50, speed: 11, cd: 8.0, color: '#1b5e20', size: 22, trail: '#4caf50', isUlt: true }
+                ]
+            }
+        ];
+
+        // ========================= GAME STATE =========================
+        let STATE = 'title'; // title | select | countdown | fight | victory
+        let p1Pick = null, p2Pick = null;
+        let fighters = [null, null];
+        let projectiles = [];
+        let particles = [];
+        let shakeTimer = 0, shakeX = 0, shakeY = 0;
+        let ambientParticles = [];
+        let candles = [];
+        let keys = {};
+        let gameTime = 0;
+        let winner = null;
+        let beamLock = null; // for priori incantatem
+
+        // Key tracking - only preventDefault during gameplay to avoid blocking UI
+        addEventListener('keydown', e => {
+            keys[e.key.toLowerCase()] = true; keys[e.code] = true;
+            if (STATE === 'fight' || STATE === 'countdown') e.preventDefault();
+        });
+        addEventListener('keyup', e => {
+            keys[e.key.toLowerCase()] = false; keys[e.code] = false;
+            if (STATE === 'fight' || STATE === 'countdown') e.preventDefault();
+        });
+
+        // ========================= FIGHTER CLASS =========================
+        class Fighter {
+            constructor(charDef, playerNum, x) {
+                this.char = charDef;
+                this.pNum = playerNum;
+                this.x = x;
+                this.y = H * 0.68;
+                this.groundY = H * 0.68;
+                this.vx = 0;
+                this.vy = 0;
+                this.facing = playerNum === 0 ? 1 : -1;
+                this.hp = charDef.hp;
+                this.maxHp = charDef.hp;
+                this.alive = true;
+                this.shield = { active: false, timer: 0, strength: 0 };
+                this.cooldowns = [0, 0, 0, 0];
+                this.state = 'idle'; // idle, walk, cast, hit, dead
+                this.stateTimer = 0;
+                this.castSpell = null;
+                this.animFrame = 0;
+                this.hitFlash = 0;
+                this.deathTimer = 0;
+                this.bodyW = 40;
+                this.bodyH = 70;
+                // DOT effects
+                this.burnTimer = 0;
+                this.bleedTimer = 0;
+            }
+
+            update(dt) {
+                if (!this.alive) {
+                    this.deathTimer += dt;
+                    return;
+                }
+
+                this.animFrame += dt * 4;
+                this.hitFlash = Math.max(0, this.hitFlash - dt * 5);
+
+                // Cooldowns
+                for (let i = 0; i < 4; i++) this.cooldowns[i] = Math.max(0, this.cooldowns[i] - dt);
+
+                // Shield
+                if (this.shield.active) {
+                    this.shield.timer -= dt;
+                    if (this.shield.timer <= 0) this.shield.active = false;
+                }
+
+                // DOTs
+                if (this.burnTimer > 0) {
+                    this.burnTimer -= dt;
+                    this.takeDamage(6 * dt, false);
+                }
+                if (this.bleedTimer > 0) {
+                    this.bleedTimer -= dt;
+                    this.takeDamage(4 * dt, false);
+                }
+
+                // State
+                if (this.stateTimer > 0) {
+                    this.stateTimer -= dt;
+                    if (this.stateTimer <= 0) this.state = 'idle';
+                }
+
+                // Movement
+                if (this.state !== 'hit' && this.state !== 'dead') {
+                    const speed = 320;
+                    let mx = 0, my = 0;
+                    if (this.pNum === 0) {
+                        if (keys['a'] || keys['KeyA']) mx = -1;
+                        if (keys['d'] || keys['KeyD']) mx = 1;
+                        if (keys['w'] || keys['KeyW']) my = -1;
+                        if (keys['s'] || keys['KeyS']) my = 1;
+                    } else {
+                        if (keys['arrowleft']) mx = -1;
+                        if (keys['arrowright']) mx = 1;
+                        if (keys['arrowup']) my = -1;
+                        if (keys['arrowdown']) my = 1;
+                    }
+                    if (mx || my) {
+                        if (this.state !== 'cast') this.state = 'walk';
+                        this.x += mx * speed * dt;
+                        this.y += my * speed * 0.5 * dt;
+                        if (mx) this.facing = mx;
+                    } else if (this.state === 'walk') {
+                        this.state = 'idle';
+                    }
+                }
+
+                // Clamp position
+                this.x = Math.max(30, Math.min(W - 30, this.x));
+                this.y = Math.max(H * 0.45, Math.min(H * 0.85, this.y));
+
+                // Spell input
+                if (this.state !== 'hit' && this.state !== 'dead') {
+                    const spellKeys = this.pNum === 0
+                        ? ['q', 'e', 'r', 'f']
+                        : ['j', 'k', 'l', ';'];
+                    for (let i = 0; i < 4; i++) {
+                        if (keys[spellKeys[i]] && this.cooldowns[i] <= 0) {
+                            this.castSpellAction(i);
+                            keys[spellKeys[i]] = false; // consume
+                        }
+                    }
+                }
+            }
+
+            castSpellAction(idx) {
+                const spell = this.char.spells[idx];
+                this.cooldowns[idx] = spell.cd;
+
+                if (spell.shieldDur) {
+                    // Shield spell
+                    this.shield.active = true;
+                    this.shield.timer = spell.shieldDur;
+                    this.shield.strength = spell.shieldStr;
+                    sfx('shield');
+                    this.state = 'cast';
+                    this.stateTimer = 0.3;
+                    // Shield particles
+                    for (let i = 0; i < 15; i++) {
+                        particles.push(new Particle(this.x, this.y - 30, spell.color, {
+                            vx: (Math.random() - 0.5) * 100, vy: (Math.random() - 0.5) * 100,
+                            life: 0.5, size: 4, glow: true
+                        }));
+                    }
+                } else {
+                    // Projectile spell
+                    const other = fighters[1 - this.pNum];
+                    const dx = other.x - this.x;
+                    const dy = (other.y - 30) - (this.y - 30);
+                    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                    const dirX = dx / dist;
+                    const dirY = dy / dist;
+                    const spd = spell.speed * 60;
+                    projectiles.push(new Projectile(
+                        this.x + this.facing * 25, this.y - 35,
+                        dirX * spd, dirY * spd,
+                        spell, this.pNum
+                    ));
+                    this.state = 'cast';
+                    this.stateTimer = 0.25;
+                    this.facing = dx > 0 ? 1 : -1;
+                    if (spell.isUlt) sfx('ultimate');
+                    else if (spell.key === 'power') sfx('power');
+                    else sfx('quick');
+                }
+            }
+
+            takeDamage(dmg, knockback = true) {
+                if (!this.alive) return;
+                let finalDmg = dmg;
+                if (this.shield.active) {
+                    finalDmg *= (1 - this.shield.strength);
+                    // Shield absorb particles
+                    for (let i = 0; i < 5; i++) {
+                        particles.push(new Particle(this.x, this.y - 30, '#4fc3f7', {
+                            vx: (Math.random() - 0.5) * 150, vy: (Math.random() - 0.5) * 150,
+                            life: 0.3, size: 3, glow: true
+                        }));
+                    }
+                }
+                this.hp -= finalDmg;
+                this.hitFlash = 1.0;
+                if (knockback && finalDmg > 5) {
+                    this.state = 'hit';
+                    this.stateTimer = 0.25;
+                    const other = fighters[1 - this.pNum];
+                    this.vx = (this.x > other.x ? 1 : -1) * 200;
+                    setTimeout(() => { this.vx = 0; }, 150);
+                }
+                // Floating damage number
+                if (finalDmg > 1) {
+                    particles.push(new DamageNumber(this.x, this.y - 60, Math.floor(finalDmg), dmg >= 40));
+                }
+                if (this.hp <= 0) {
+                    this.hp = 0;
+                    this.alive = false;
+                    this.state = 'dead';
+                    sfx('death');
+                }
+            }
+
+            draw() {
+                X.save();
+                const bx = this.x + (this.state === 'hit' ? (Math.random() - 0.5) * 6 : 0);
+                const by = this.y;
+                X.translate(bx, by);
+                X.scale(this.facing, 1);
+
+                const bob = this.state === 'idle' ? Math.sin(this.animFrame * 2) * 2 : 0;
+                const walkBob = this.state === 'walk' ? Math.sin(this.animFrame * 6) * 3 : 0;
+
+                // Death animation
+                if (this.state === 'dead') {
+                    const t = Math.min(this.deathTimer * 2, 1);
+                    X.rotate(t * Math.PI * 0.4);
+                    X.globalAlpha = 1 - t * 0.5;
+                }
+
+                // Hit flash
+                if (this.hitFlash > 0) {
+                    X.filter = `brightness(${1 + this.hitFlash * 2})`;
+                }
+
+                const c = this.char;
+                const yOff = bob + walkBob;
+
+                // ---- SHADOW ----
+                X.fillStyle = 'rgba(0,0,0,0.3)';
+                X.beginPath();
+                X.ellipse(0, 5, 22, 6, 0, 0, Math.PI * 2);
+                X.fill();
+
+                // ---- ROBE / BODY ----
+                X.fillStyle = c.robeColor;
+                // Main robe body
+                X.beginPath();
+                X.moveTo(-16, -55 + yOff);
+                X.lineTo(-20, 0 + yOff);
+                X.lineTo(-14, 4 + yOff);
+                X.lineTo(14, 4 + yOff);
+                X.lineTo(20, 0 + yOff);
+                X.lineTo(16, -55 + yOff);
+                X.closePath();
+                X.fill();
+
+                // Robe detail / trim
+                X.strokeStyle = c.robeAccent;
+                X.lineWidth = 1.5;
+                X.beginPath();
+                X.moveTo(-4, -52 + yOff);
+                X.lineTo(-4, 0 + yOff);
+                X.moveTo(4, -52 + yOff);
+                X.lineTo(4, 0 + yOff);
+                X.stroke();
+
+                // Collar
+                X.fillStyle = c.robeAccent;
+                X.beginPath();
+                X.moveTo(-12, -55 + yOff);
+                X.lineTo(0, -48 + yOff);
+                X.lineTo(12, -55 + yOff);
+                X.lineTo(0, -52 + yOff);
+                X.closePath();
+                X.fill();
+
+                // ---- LEGS (walking) ----
+                X.fillStyle = '#1a1a1a';
+                if (this.state === 'walk') {
+                    const legAnim = Math.sin(this.animFrame * 6) * 8;
+                    X.fillRect(-8, 0 + yOff, 6, 10 + legAnim);
+                    X.fillRect(2, 0 + yOff, 6, 10 - legAnim);
+                } else {
+                    X.fillRect(-8, 0 + yOff, 6, 8);
+                    X.fillRect(2, 0 + yOff, 6, 8);
+                }
+
+                // Shoes
+                X.fillStyle = '#2a1a0a';
+                X.fillRect(-9, 7 + yOff, 8, 3);
+                X.fillRect(1, 7 + yOff, 8, 3);
+
+                // ---- HEAD ----
+                X.fillStyle = c.skinColor;
+                X.beginPath();
+                X.arc(0, -64 + yOff, 12, 0, Math.PI * 2);
+                X.fill();
+
+                // ---- HAIR ----
+                if (c.hairColor) {
+                    X.fillStyle = c.hairColor;
+                    switch (c.hairStyle) {
+                        case 'messy':
+                            X.beginPath();
+                            X.arc(0, -67 + yOff, 13, Math.PI, Math.PI * 2);
+                            X.fill();
+                            // Messy tufts
+                            for (let i = -10; i <= 10; i += 5) {
+                                X.beginPath();
+                                X.moveTo(i, -76 + yOff);
+                                X.lineTo(i - 2, -80 + yOff + Math.random() * 3);
+                                X.lineTo(i + 3, -76 + yOff);
+                                X.fill();
+                            }
+                            break;
+                        case 'bushy':
+                            X.beginPath();
+                            X.ellipse(0, -68 + yOff, 17, 16, 0, 0, Math.PI * 2);
+                            X.fill();
+                            // Bushy extras
+                            X.beginPath();
+                            X.ellipse(-10, -62 + yOff, 8, 10, -0.3, 0, Math.PI * 2);
+                            X.ellipse(10, -62 + yOff, 8, 10, 0.3, 0, Math.PI * 2);
+                            X.fill();
+                            break;
+                        case 'shaggy':
+                            X.beginPath();
+                            X.arc(0, -67 + yOff, 14, Math.PI, Math.PI * 2);
+                            X.fill();
+                            X.fillRect(-14, -68 + yOff, 5, 12);
+                            X.fillRect(9, -68 + yOff, 5, 12);
+                            break;
+                        case 'longbeard':
+                            // Long white hair
+                            X.beginPath();
+                            X.arc(0, -68 + yOff, 14, Math.PI * 0.8, Math.PI * 2.2);
+                            X.fill();
+                            X.fillRect(-14, -66 + yOff, 5, 20);
+                            X.fillRect(9, -66 + yOff, 5, 20);
+                            // Beard
+                            X.beginPath();
+                            X.moveTo(-8, -55 + yOff);
+                            X.lineTo(0, -35 + yOff);
+                            X.lineTo(8, -55 + yOff);
+                            X.fill();
+                            break;
+                        case 'bald':
+                            break;
+                        case 'greasy':
+                            X.beginPath();
+                            X.arc(0, -67 + yOff, 13, Math.PI * 0.85, Math.PI * 2.15);
+                            X.fill();
+                            // Curtain hair
+                            X.fillRect(-14, -67 + yOff, 4, 18);
+                            X.fillRect(10, -67 + yOff, 4, 18);
+                            break;
+                        case 'wild':
+                            X.beginPath();
+                            X.ellipse(0, -68 + yOff, 18, 17, 0, 0, Math.PI * 2);
+                            X.fill();
+                            for (let a = 0; a < Math.PI * 2; a += 0.5) {
+                                X.beginPath();
+                                X.moveTo(Math.cos(a) * 16, -68 + Math.sin(a) * 16 + yOff);
+                                X.lineTo(Math.cos(a) * 22, -68 + Math.sin(a) * 22 + yOff);
+                                X.lineWidth = 2;
+                                X.strokeStyle = c.hairColor;
+                                X.stroke();
+                            }
+                            break;
+                        case 'slicked':
+                            X.beginPath();
+                            X.arc(0, -68 + yOff, 13, Math.PI, Math.PI * 2);
+                            X.fill();
+                            break;
+                    }
+                }
+
+                // ---- HAT (Dumbledore) ----
+                if (c.hasHat) {
+                    X.fillStyle = '#4a148c';
+                    X.beginPath();
+                    X.moveTo(-14, -76 + yOff);
+                    X.lineTo(0, -105 + yOff);
+                    X.lineTo(14, -76 + yOff);
+                    X.closePath();
+                    X.fill();
+                    // Brim
+                    X.beginPath();
+                    X.ellipse(0, -76 + yOff, 18, 4, 0, 0, Math.PI * 2);
+                    X.fill();
+                    // Star on hat
+                    X.fillStyle = '#ffd700';
+                    X.font = '8px serif';
+                    X.fillText('★', -4, -88 + yOff);
+                }
+
+                // ---- SCAR (Harry) ----
+                if (c.scarOnForehead) {
+                    X.strokeStyle = '#ff3d00';
+                    X.lineWidth = 1.5;
+                    X.beginPath();
+                    X.moveTo(-2, -74 + yOff);
+                    X.lineTo(0, -71 + yOff);
+                    X.lineTo(2, -74 + yOff);
+                    X.stroke();
+                }
+
+                // ---- EYES ----
+                if (c.redEyes) {
+                    X.fillStyle = '#ff1744';
+                } else {
+                    X.fillStyle = '#1a1a1a';
+                }
+                X.beginPath();
+                X.arc(-4, -65 + yOff, 1.8, 0, Math.PI * 2);
+                X.arc(4, -65 + yOff, 1.8, 0, Math.PI * 2);
+                X.fill();
+
+                // ---- GLASSES ----
+                if (c.hasGlasses) {
+                    X.strokeStyle = c.id === 'dumbledore' ? '#daa520' : '#333';
+                    X.lineWidth = 1;
+                    X.beginPath();
+                    X.arc(-4, -65 + yOff, 4, 0, Math.PI * 2);
+                    X.arc(4, -65 + yOff, 4, 0, Math.PI * 2);
+                    X.moveTo(0, -65 + yOff);
+                    X.lineTo(0, -65 + yOff);
+                    X.stroke();
+                    // Bridge
+                    X.beginPath();
+                    X.moveTo(-0.5, -65 + yOff);
+                    X.lineTo(0.5, -65 + yOff);
+                    X.stroke();
+                }
+
+                // ---- NOSE ----
+                if (!c.noNose) {
+                    X.fillStyle = c.skinColor;
+                    X.beginPath();
+                    X.moveTo(-1, -63 + yOff);
+                    X.lineTo(0, -59 + yOff);
+                    X.lineTo(1, -63 + yOff);
+                    X.fill();
+                } else {
+                    // Voldemort slits
+                    X.strokeStyle = '#888';
+                    X.lineWidth = 0.5;
+                    X.beginPath();
+                    X.moveTo(-1.5, -62 + yOff);
+                    X.lineTo(-0.5, -60 + yOff);
+                    X.moveTo(0.5, -60 + yOff);
+                    X.lineTo(1.5, -62 + yOff);
+                    X.stroke();
+                }
+
+                // ---- MOUTH ----
+                X.strokeStyle = '#8b6b5a';
+                X.lineWidth = 1;
+                X.beginPath();
+                X.arc(0, -57 + yOff, 3, 0.1, Math.PI - 0.1);
+                X.stroke();
+
+                // ---- ARM & WAND ----
+                const armAngle = this.state === 'cast' ? -0.8 : -0.2 + Math.sin(this.animFrame * 2) * 0.05;
+                X.save();
+                X.translate(12, -48 + yOff);
+                X.rotate(armAngle);
+
+                // Arm (sleeve)
+                X.fillStyle = c.robeColor;
+                X.fillRect(-3, 0, 6, 20);
+
+                // Hand
+                X.fillStyle = c.skinColor;
+                X.beginPath();
+                X.arc(0, 22, 3, 0, Math.PI * 2);
+                X.fill();
+
+                // Wand
+                X.fillStyle = '#5d3a1a';
+                X.fillRect(-1, 22, 2, 22);
+                // Wand tip glow
+                const glowing = this.state === 'cast' || this.cooldowns.some((cd, i) => cd > this.char.spells[i].cd - 0.3);
+                if (glowing) {
+                    const glowColor = this.state === 'cast' && this.castSpell ? this.char.spells[0].color : '#ffd700';
+                    X.shadowColor = glowColor;
+                    X.shadowBlur = 15;
+                    X.fillStyle = glowColor;
+                    X.beginPath();
+                    X.arc(0, 44, 4, 0, Math.PI * 2);
+                    X.fill();
+                    X.shadowBlur = 0;
+                }
+
+                X.restore();
+
+                // ---- SHIELD EFFECT ----
+                if (this.shield.active) {
+                    const shieldAlpha = 0.3 + Math.sin(gameTime * 8) * 0.1;
+                    X.strokeStyle = this.char.spells[2].color;
+                    X.lineWidth = 3;
+                    X.globalAlpha = shieldAlpha;
+                    X.beginPath();
+                    X.ellipse(0, -30 + yOff, 30, 40, 0, 0, Math.PI * 2);
+                    X.stroke();
+                    // Inner glow
+                    X.globalAlpha = shieldAlpha * 0.3;
+                    X.fillStyle = this.char.spells[2].color;
+                    X.fill();
+                    X.globalAlpha = 1;
+                }
+
+                // ---- BURN/BLEED EFFECTS ----
+                if (this.burnTimer > 0) {
+                    for (let i = 0; i < 3; i++) {
+                        const fx = (Math.random() - 0.5) * 30;
+                        const fy = -30 + (Math.random() - 0.5) * 40 + yOff;
+                        X.fillStyle = `rgba(255,${Math.floor(Math.random() * 100 + 50)},0,${0.3 + Math.random() * 0.3})`;
+                        X.beginPath();
+                        X.arc(fx, fy, 3 + Math.random() * 3, 0, Math.PI * 2);
+                        X.fill();
+                    }
+                }
+                if (this.bleedTimer > 0) {
+                    for (let i = 0; i < 2; i++) {
+                        const fx = (Math.random() - 0.5) * 20;
+                        const fy = -20 + Math.random() * 30 + yOff;
+                        X.fillStyle = `rgba(200,0,0,${0.4 + Math.random() * 0.3})`;
+                        X.beginPath();
+                        X.arc(fx, fy, 2 + Math.random() * 2, 0, Math.PI * 2);
+                        X.fill();
+                    }
+                }
+
+                X.filter = 'none';
+                X.globalAlpha = 1;
+                X.restore();
+
+                // Name tag
+                X.font = 'bold 11px Georgia, serif';
+                X.textAlign = 'center';
+                X.fillStyle = this.pNum === 0 ? '#ff6b6b' : '#6bc5ff';
+                X.fillText(this.char.name, this.x, this.y - 85);
+            }
+        }
+
+        // ========================= PROJECTILE CLASS =========================
+        class Projectile {
+            constructor(x, y, vx, vy, spell, owner) {
+                this.x = x; this.y = y;
+                this.vx = vx; this.vy = vy;
+                this.spell = spell;
+                this.owner = owner;
+                this.alive = true;
+                this.life = 3;
+                this.radius = spell.size;
+            }
+
+            update(dt) {
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
+                this.life -= dt;
+
+                // Trail particles
+                if (Math.random() < 0.8) {
+                    particles.push(new Particle(
+                        this.x + (Math.random() - 0.5) * 6,
+                        this.y + (Math.random() - 0.5) * 6,
+                        this.spell.trail || this.spell.color,
+                        { vx: (Math.random() - 0.5) * 30, vy: (Math.random() - 0.5) * 30, life: 0.4, size: this.radius * 0.4, glow: true }
+                    ));
+                }
+
+                // Off screen or expired
+                if (this.x < -50 || this.x > W + 50 || this.y < -50 || this.y > H + 50 || this.life <= 0) {
+                    this.alive = false;
+                }
+
+                // Hit detection against opponent
+                const target = fighters[1 - this.owner];
+                if (target && target.alive) {
+                    const dx = this.x - target.x;
+                    const dy = this.y - (target.y - 30);
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < this.radius + 20) {
+                        this.alive = false;
+                        target.takeDamage(this.spell.dmg);
+                        if (this.spell.burn) target.burnTimer = 2;
+                        if (this.spell.bleed) target.bleedTimer = 2.5;
+                        sfx('hit');
+                        // Impact particles
+                        for (let i = 0; i < 20; i++) {
+                            particles.push(new Particle(this.x, this.y, this.spell.color, {
+                                vx: (Math.random() - 0.5) * 300, vy: (Math.random() - 0.5) * 300,
+                                life: 0.5, size: 3 + Math.random() * 4, glow: true
+                            }));
+                        }
+                        if (this.spell.isUlt) {
+                            shakeTimer = 0.4;
+                            hitFlash(this.spell.color, 0.3);
+                            // Extra big explosion
+                            for (let i = 0; i < 30; i++) {
+                                particles.push(new Particle(this.x, this.y, this.spell.trail, {
+                                    vx: (Math.random() - 0.5) * 500, vy: (Math.random() - 0.5) * 500,
+                                    life: 0.8, size: 5 + Math.random() * 6, glow: true
+                                }));
+                            }
+                        } else {
+                            shakeTimer = 0.15;
+                        }
+                    }
+                }
+
+                // Spell-on-spell collision (Priori Incantatem for ultimates)
+                for (let i = projectiles.length - 1; i >= 0; i--) {
+                    const other = projectiles[i];
+                    if (other === this || !other.alive || other.owner === this.owner) continue;
+                    const dx = this.x - other.x;
+                    const dy = this.y - other.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < this.radius + other.radius) {
+                        if (this.spell.isUlt && other.spell.isUlt) {
+                            // PRIORI INCANTATEM - beam lock!
+                            beamLock = {
+                                x: (this.x + other.x) / 2,
+                                y: (this.y + other.y) / 2,
+                                p1x: fighters[0].x, p1y: fighters[0].y - 35,
+                                p2x: fighters[1].x, p2y: fighters[1].y - 35,
+                                color1: this.owner === 0 ? this.spell.color : other.spell.color,
+                                color2: this.owner === 1 ? this.spell.color : other.spell.color,
+                                timer: 1.5,
+                                power: 0.5 // 0=p1 wins, 1=p2 wins, 0.5=draw
+                            };
+                            shakeTimer = 1.5;
+                            this.alive = false;
+                            other.alive = false;
+                        } else {
+                            // Normal collision - both destroyed with sparks
+                            for (let j = 0; j < 15; j++) {
+                                particles.push(new Particle((this.x + other.x) / 2, (this.y + other.y) / 2, '#ffd700', {
+                                    vx: (Math.random() - 0.5) * 400, vy: (Math.random() - 0.5) * 400,
+                                    life: 0.4, size: 3, glow: true
+                                }));
+                            }
+                            this.alive = false;
+                            other.alive = false;
+                        }
+                    }
+                }
+            }
+
+            draw() {
+                X.save();
+                // Glow
+                X.shadowColor = this.spell.color;
+                X.shadowBlur = 20;
+                // Core
+                const grad = X.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+                grad.addColorStop(0, '#ffffff');
+                grad.addColorStop(0.3, this.spell.color);
+                grad.addColorStop(1, 'transparent');
+                X.fillStyle = grad;
+                X.beginPath();
+                X.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                X.fill();
+
+                // For ultimates, draw extra ring
+                if (this.spell.isUlt) {
+                    X.strokeStyle = this.spell.trail;
+                    X.lineWidth = 2;
+                    X.globalAlpha = 0.5 + Math.sin(gameTime * 15) * 0.3;
+                    X.beginPath();
+                    X.arc(this.x, this.y, this.radius * 1.5, 0, Math.PI * 2);
+                    X.stroke();
+                }
+
+                X.shadowBlur = 0;
+                X.globalAlpha = 1;
+                X.restore();
+            }
+        }
+
+        // ========================= PARTICLE CLASS =========================
+        class Particle {
+            constructor(x, y, color, opts = {}) {
+                this.x = x; this.y = y;
+                this.color = color;
+                this.vx = opts.vx || 0;
+                this.vy = opts.vy || 0;
+                this.life = opts.life || 1;
+                this.maxLife = this.life;
+                this.size = opts.size || 3;
+                this.glow = opts.glow || false;
+                this.alive = true;
+                this.gravity = opts.gravity || 0;
+            }
+            update(dt) {
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
+                this.vy += this.gravity * dt;
+                this.life -= dt;
+                if (this.life <= 0) this.alive = false;
+            }
+            draw() {
+                const alpha = this.life / this.maxLife;
+                X.save();
+                X.globalAlpha = alpha;
+                if (this.glow) {
+                    X.shadowColor = this.color;
+                    X.shadowBlur = 10;
+                }
+                X.fillStyle = this.color;
+                X.beginPath();
+                X.arc(this.x, this.y, this.size * alpha, 0, Math.PI * 2);
+                X.fill();
+                X.restore();
+            }
+        }
+
+        // ========================= DAMAGE NUMBER =========================
+        class DamageNumber {
+            constructor(x, y, value, isCrit) {
+                this.x = x + (Math.random() - 0.5) * 20;
+                this.y = y;
+                this.value = value;
+                this.isCrit = isCrit;
+                this.life = 1.2;
+                this.maxLife = 1.2;
+                this.alive = true;
+                this.vy = -80;
+            }
+            update(dt) {
+                this.y += this.vy * dt;
+                this.vy += 20 * dt;
+                this.life -= dt;
+                if (this.life <= 0) this.alive = false;
+            }
+            draw() {
+                const alpha = Math.min(1, this.life / this.maxLife * 2);
+                const scale = this.isCrit ? 1.5 : 1;
+                X.save();
+                X.globalAlpha = alpha;
+                X.font = `bold ${Math.floor(18 * scale)}px Georgia, serif`;
+                X.textAlign = 'center';
+                X.fillStyle = this.isCrit ? '#ff6d00' : '#ff5252';
+                X.strokeStyle = '#000';
+                X.lineWidth = 3;
+                const txt = this.isCrit ? `${this.value}!` : `${this.value}`;
+                X.strokeText(txt, this.x, this.y);
+                X.fillText(txt, this.x, this.y);
+                X.restore();
+            }
+        }
+
+        // ========================= ARENA BACKGROUND =========================
+        function initArena() {
+            // Floating candles
+            candles = [];
+            for (let i = 0; i < 20; i++) {
+                candles.push({
+                    x: Math.random() * W,
+                    y: H * 0.1 + Math.random() * H * 0.25,
+                    phase: Math.random() * Math.PI * 2,
+                    size: 0.5 + Math.random() * 0.5
+                });
+            }
+            // Ambient dust
+            ambientParticles = [];
+            for (let i = 0; i < 40; i++) {
+                ambientParticles.push({
+                    x: Math.random() * W,
+                    y: Math.random() * H,
+                    vx: (Math.random() - 0.5) * 15,
+                    vy: (Math.random() - 0.5) * 10,
+                    size: Math.random() * 2 + 0.5,
+                    alpha: Math.random() * 0.3 + 0.05,
+                    phase: Math.random() * Math.PI * 2
+                });
+            }
+        }
+
+        function drawArena() {
+            // ---- SKY / CEILING GRADIENT ----
+            const skyGrad = X.createLinearGradient(0, 0, 0, H);
+            skyGrad.addColorStop(0, '#0a0412');
+            skyGrad.addColorStop(0.3, '#1a0a2e');
+            skyGrad.addColorStop(0.6, '#2a1040');
+            skyGrad.addColorStop(1, '#1a0a20');
+            X.fillStyle = skyGrad;
+            X.fillRect(0, 0, W, H);
+
+            // ---- STONE WALLS ----
+            const wallY = H * 0.15;
+            X.fillStyle = '#2a1f18';
+            X.fillRect(0, wallY, W, H * 0.55);
+
+            // Stone bricks pattern
+            X.strokeStyle = 'rgba(60,45,35,0.4)';
+            X.lineWidth = 1;
+            const brickH = 20, brickW = 50;
+            for (let row = 0; row < 20; row++) {
+                const y = wallY + row * brickH;
+                const offset = (row % 2) * brickW / 2;
+                for (let col = -1; col < W / brickW + 1; col++) {
+                    X.strokeRect(col * brickW + offset, y, brickW, brickH);
+                }
+            }
+
+            // ---- ARCHED WINDOWS ----
+            const numWindows = 5;
+            for (let i = 0; i < numWindows; i++) {
+                const wx = W * (i + 0.5) / numWindows;
+                const wy = H * 0.22;
+                const ww = 50, wh = 80;
+
+                // Window frame
+                X.fillStyle = '#1a1210';
+                X.beginPath();
+                X.moveTo(wx - ww / 2, wy + wh / 2);
+                X.lineTo(wx - ww / 2, wy - wh / 4);
+                X.arc(wx, wy - wh / 4, ww / 2, Math.PI, 0);
+                X.lineTo(wx + ww / 2, wy + wh / 2);
+                X.closePath();
+                X.fill();
+
+                // Window light
+                const wGrad = X.createRadialGradient(wx, wy, 0, wx, wy, wh / 2);
+                wGrad.addColorStop(0, 'rgba(20,30,80,0.6)');
+                wGrad.addColorStop(1, 'rgba(5,5,20,0.8)');
+                X.fillStyle = wGrad;
+                X.fill();
+
+                // Moonlight glow
+                X.fillStyle = 'rgba(100,140,255,0.03)';
+                X.beginPath();
+                X.ellipse(wx, wy + 40, 60, 120, 0, 0, Math.PI * 2);
+                X.fill();
+            }
+
+            // ---- STONE FLOOR ----
+            const floorY = H * 0.7;
+            // Floor gradient
+            const floorGrad = X.createLinearGradient(0, floorY, 0, H);
+            floorGrad.addColorStop(0, '#3a2f28');
+            floorGrad.addColorStop(1, '#1a1410');
+            X.fillStyle = floorGrad;
+            X.fillRect(0, floorY, W, H);
+
+            // Floor tiles (perspective)
+            X.strokeStyle = 'rgba(80,65,55,0.3)';
+            X.lineWidth = 1;
+            const tileSize = 60;
+            for (let row = 0; row < 8; row++) {
+                const y = floorY + row * tileSize * 0.6;
+                const perspective = 0.7 + row * 0.1;
+                for (let col = -1; col < W / (tileSize * perspective) + 2; col++) {
+                    const tx = col * tileSize * perspective + (row % 2) * tileSize * perspective / 2;
+                    X.strokeRect(tx, y, tileSize * perspective, tileSize * 0.6);
+                }
+            }
+
+            // ---- BANNERS (house colors) ----
+            const bannerColors = ['#740001', '#1A472A', '#0E1A40', '#FFD800'];
+            const bannerAccents = ['#D3A625', '#5D5D5D', '#946B2D', '#000000'];
+            for (let i = 0; i < 4; i++) {
+                const bx = W * (i * 2 + 1) / 8;
+                const by = H * 0.12;
+                // Pole
+                X.fillStyle = '#5d3a1a';
+                X.fillRect(bx - 1, by, 2, 8);
+                // Banner
+                X.fillStyle = bannerColors[i];
+                X.beginPath();
+                X.moveTo(bx - 18, by + 8);
+                X.lineTo(bx + 18, by + 8);
+                X.lineTo(bx + 15, by + 60);
+                X.lineTo(bx, by + 70);
+                X.lineTo(bx - 15, by + 60);
+                X.closePath();
+                X.fill();
+                // Accent stripe
+                X.fillStyle = bannerAccents[i];
+                X.fillRect(bx - 3, by + 15, 6, 40);
+            }
+
+            // ---- FLOATING CANDLES ----
+            for (const c of candles) {
+                const cy = c.y + Math.sin(gameTime * 1.5 + c.phase) * 8;
+                const flicker = 0.7 + Math.sin(gameTime * 10 + c.phase) * 0.3;
+
+                // Candle body
+                X.fillStyle = '#f5e6c8';
+                X.fillRect(c.x - 2 * c.size, cy, 4 * c.size, 15 * c.size);
+
+                // Flame
+                X.fillStyle = `rgba(255,200,50,${flicker})`;
+                X.beginPath();
+                X.ellipse(c.x, cy - 3, 4 * c.size, 8 * c.size, 0, 0, Math.PI * 2);
+                X.fill();
+
+                // Flame glow
+                X.fillStyle = `rgba(255,180,50,${flicker * 0.15})`;
+                X.beginPath();
+                X.arc(c.x, cy, 20 * c.size, 0, Math.PI * 2);
+                X.fill();
+            }
+
+            // ---- AMBIENT DUST ----
+            for (const p of ambientParticles) {
+                p.x += p.vx * 0.016;
+                p.y += p.vy * 0.016;
+                p.phase += 0.02;
+                if (p.x < 0) p.x = W;
+                if (p.x > W) p.x = 0;
+                if (p.y < 0) p.y = H;
+                if (p.y > H) p.y = 0;
+                const a = p.alpha * (0.5 + Math.sin(p.phase) * 0.5);
+                X.fillStyle = `rgba(200,180,150,${a})`;
+                X.beginPath();
+                X.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                X.fill();
+            }
+        }
+
+        // ========================= BEAM LOCK (PRIORI INCANTATEM) =========================
+        function drawBeamLock() {
+            if (!beamLock) return;
+            const b = beamLock;
+
+            // During beam lock, both players can mash keys to push
+            if (keys['f'] || keys['q'] || keys['e'] || keys['r']) b.power = Math.max(0, b.power - 0.01);
+            if (keys[';'] || keys['j'] || keys['k'] || keys['l']) b.power = Math.min(1, b.power + 0.01);
+
+            // Center point shifts based on power
+            const cx = b.p1x + (b.p2x - b.p1x) * b.power;
+            const cy = b.p1y + (b.p2y - b.p1y) * b.power;
+
+            // Draw beams
+            for (let beam = 0; beam < 2; beam++) {
+                const sx = beam === 0 ? fighters[0].x + fighters[0].facing * 25 : fighters[1].x + fighters[1].facing * 25;
+                const sy = beam === 0 ? fighters[0].y - 35 : fighters[1].y - 35;
+                const color = beam === 0 ? b.color1 : b.color2;
+
+                X.save();
+                X.shadowColor = color;
+                X.shadowBlur = 30;
+                X.strokeStyle = color;
+                X.lineWidth = 6 + Math.sin(gameTime * 20) * 2;
+                X.globalAlpha = 0.8;
+                X.beginPath();
+                X.moveTo(sx, sy);
+                // Wavy beam
+                const steps = 20;
+                for (let i = 1; i <= steps; i++) {
+                    const t = i / steps;
+                    const px = sx + (cx - sx) * t;
+                    const py = sy + (cy - sy) * t + Math.sin(gameTime * 15 + i) * 5;
+                    X.lineTo(px, py);
+                }
+                X.stroke();
+                X.restore();
+            }
+
+            // Center clash point
+            X.save();
+            X.shadowColor = '#fff';
+            X.shadowBlur = 40;
+            X.fillStyle = '#fff';
+            X.beginPath();
+            X.arc(cx, cy, 10 + Math.sin(gameTime * 20) * 5, 0, Math.PI * 2);
+            X.fill();
+            X.restore();
+
+            // Sparks from center
+            if (Math.random() < 0.5) {
+                particles.push(new Particle(cx, cy, '#ffd700', {
+                    vx: (Math.random() - 0.5) * 400, vy: (Math.random() - 0.5) * 400,
+                    life: 0.3, size: 3, glow: true
+                }));
+            }
+
+            b.timer -= 1 / 60;
+            if (b.timer <= 0) {
+                // Resolve: loser takes damage
+                const loser = b.power < 0.5 ? 1 : 0;
+                fighters[loser].takeDamage(40);
+                shakeTimer = 0.5;
+                hitFlash('#ffd700', 0.4);
+                // Big explosion
+                for (let i = 0; i < 50; i++) {
+                    particles.push(new Particle(cx, cy, '#ffd700', {
+                        vx: (Math.random() - 0.5) * 600, vy: (Math.random() - 0.5) * 600,
+                        life: 1.0, size: 4 + Math.random() * 5, glow: true
+                    }));
+                }
+                beamLock = null;
+            }
+        }
+
+        // ========================= HIT FLASH =========================
+        function hitFlash(color, duration) {
+            const el = document.getElementById('hit-flash');
+            el.style.background = color;
+            el.style.opacity = 0.3;
+            setTimeout(() => { el.style.opacity = 0; }, duration * 1000);
+        }
+
+        // ========================= HUD UPDATE =========================
+        function updateHUD() {
+            if (!fighters[0] || !fighters[1]) return;
+            for (let i = 0; i < 2; i++) {
+                const f = fighters[i];
+                const pct = Math.max(0, f.hp / f.maxHp * 100);
+                document.getElementById(`hud-p${i + 1}-hp`).style.width = pct + '%';
+                document.getElementById(`hud-p${i + 1}-hptxt`).textContent = `${Math.max(0, Math.floor(f.hp))}/${f.maxHp}`;
+                // Low HP color
+                if (pct < 25) {
+                    document.getElementById(`hud-p${i + 1}-hp`).style.background = 'linear-gradient(90deg,#b71c1c,#d32f2f)';
+                }
+
+                // Cooldown bars
+                const cdBar = document.getElementById(`hud-p${i + 1}-cd`);
+                cdBar.innerHTML = '';
+                const spellKeys = i === 0 ? ['Q', 'E', 'R', 'F'] : ['J', 'K', 'L', ';'];
+                const spellColors = ['#ef5350', '#ff9800', '#4fc3f7', '#ffd700'];
+                for (let s = 0; s < 4; s++) {
+                    const spell = f.char.spells[s];
+                    const cdPct = Math.max(0, Math.min(100, (1 - f.cooldowns[s] / spell.cd) * 100));
+                    const slot = document.createElement('div');
+                    slot.className = 'cd-slot';
+                    slot.innerHTML = `<div class="cd-fill" style="width:${cdPct}%;background:${spellColors[s]}"></div><div class="cd-key">${spellKeys[s]}</div>`;
+                    cdBar.appendChild(slot);
+                }
+            }
+        }
+
+        // ========================= CHARACTER SELECT PREVIEW =========================
+        function drawCharPreview(canvas, char, size) {
+            const cx = canvas.getContext('2d');
+            canvas.width = size;
+            canvas.height = size + 20;
+            cx.clearRect(0, 0, canvas.width, canvas.height);
+
+            cx.save();
+            cx.translate(size / 2, size * 0.8);
+            const sc = size / 80;
+            cx.scale(sc, sc);
+
+            // Mini character drawing
+            const c = char;
+
+            // Shadow
+            cx.fillStyle = 'rgba(0,0,0,0.3)';
+            cx.beginPath();
+            cx.ellipse(0, 5, 18, 5, 0, 0, Math.PI * 2);
+            cx.fill();
+
+            // Robe
+            cx.fillStyle = c.robeColor;
+            cx.beginPath();
+            cx.moveTo(-14, -50); cx.lineTo(-17, 0); cx.lineTo(17, 0); cx.lineTo(14, -50);
+            cx.closePath();
+            cx.fill();
+
+            // Trim
+            cx.strokeStyle = c.robeAccent;
+            cx.lineWidth = 1.5;
+            cx.beginPath();
+            cx.moveTo(-3, -48); cx.lineTo(-3, 0);
+            cx.moveTo(3, -48); cx.lineTo(3, 0);
+            cx.stroke();
+
+            // Head
+            cx.fillStyle = c.skinColor;
+            cx.beginPath();
+            cx.arc(0, -58, 10, 0, Math.PI * 2);
+            cx.fill();
+
+            // Hair
+            if (c.hairColor) {
+                cx.fillStyle = c.hairColor;
+                switch (c.hairStyle) {
+                    case 'messy':
+                        cx.beginPath(); cx.arc(0, -61, 11, Math.PI, Math.PI * 2); cx.fill();
+                        break;
+                    case 'bushy':
+                        cx.beginPath(); cx.ellipse(0, -60, 14, 13, 0, 0, Math.PI * 2); cx.fill();
+                        break;
+                    case 'shaggy':
+                        cx.beginPath(); cx.arc(0, -61, 12, Math.PI, Math.PI * 2); cx.fill();
+                        cx.fillRect(-12, -62, 4, 10); cx.fillRect(8, -62, 4, 10);
+                        break;
+                    case 'longbeard':
+                        cx.beginPath(); cx.arc(0, -62, 12, Math.PI * 0.8, Math.PI * 2.2); cx.fill();
+                        cx.beginPath(); cx.moveTo(-7, -50); cx.lineTo(0, -35); cx.lineTo(7, -50); cx.fill();
+                        break;
+                    case 'greasy':
+                        cx.beginPath(); cx.arc(0, -61, 11, Math.PI * 0.85, Math.PI * 2.15); cx.fill();
+                        cx.fillRect(-12, -61, 4, 15); cx.fillRect(8, -61, 4, 15);
+                        break;
+                    case 'wild':
+                        cx.beginPath(); cx.ellipse(0, -62, 16, 15, 0, 0, Math.PI * 2); cx.fill();
+                        break;
+                    case 'slicked':
+                        cx.beginPath(); cx.arc(0, -62, 11, Math.PI, Math.PI * 2); cx.fill();
+                        break;
+                }
+            }
+
+            // Hat
+            if (c.hasHat) {
+                cx.fillStyle = '#4a148c';
+                cx.beginPath(); cx.moveTo(-12, -68); cx.lineTo(0, -92); cx.lineTo(12, -68); cx.closePath(); cx.fill();
+                cx.fillStyle = '#ffd700'; cx.font = '7px serif'; cx.fillText('★', -3, -78);
+            }
+
+            // Eyes
+            cx.fillStyle = c.redEyes ? '#ff1744' : '#1a1a1a';
+            cx.beginPath(); cx.arc(-3, -59, 1.5, 0, Math.PI * 2); cx.arc(3, -59, 1.5, 0, Math.PI * 2); cx.fill();
+
+            // Glasses
+            if (c.hasGlasses) {
+                cx.strokeStyle = c.id === 'dumbledore' ? '#daa520' : '#333';
+                cx.lineWidth = 0.8;
+                cx.beginPath(); cx.arc(-3, -59, 3.5, 0, Math.PI * 2); cx.stroke();
+                cx.beginPath(); cx.arc(3, -59, 3.5, 0, Math.PI * 2); cx.stroke();
+            }
+
+            // Scar
+            if (c.scarOnForehead) {
+                cx.strokeStyle = '#ff3d00'; cx.lineWidth = 1.2;
+                cx.beginPath(); cx.moveTo(-1.5, -67); cx.lineTo(0, -64.5); cx.lineTo(1.5, -67); cx.stroke();
+            }
+
+            // Wand
+            cx.fillStyle = '#5d3a1a';
+            cx.save();
+            cx.translate(10, -42);
+            cx.rotate(-0.3);
+            cx.fillRect(-1, 0, 2, 18);
+            cx.fillStyle = '#ffd700';
+            cx.beginPath(); cx.arc(0, 18, 2, 0, Math.PI * 2); cx.fill();
+            cx.restore();
+
+            cx.restore();
+        }
+
+        function buildSelectScreen() {
+            ['p1grid', 'p2grid'].forEach((gridId, pIdx) => {
+                const grid = document.getElementById(gridId);
+                grid.innerHTML = '';
+                CHARS.forEach(char => {
+                    const card = document.createElement('div');
+                    card.className = 'ccard';
+                    const cvs = document.createElement('canvas');
+                    drawCharPreview(cvs, char, 70);
+                    card.appendChild(cvs);
+                    const nameDiv = document.createElement('div');
+                    nameDiv.className = 'cname';
+                    nameDiv.textContent = char.name;
+                    card.appendChild(nameDiv);
+                    const houseDiv = document.createElement('div');
+                    houseDiv.className = 'chouse';
+                    houseDiv.textContent = char.house;
+                    card.appendChild(houseDiv);
+                    const spellsDiv = document.createElement('div');
+                    spellsDiv.className = 'cspells';
+                    spellsDiv.textContent = char.spells.map(s => s.name).join(' | ');
+                    card.appendChild(spellsDiv);
+
+                    card.onclick = () => {
+                        sfx('select');
+                        grid.querySelectorAll('.ccard').forEach(c => c.classList.remove('picked'));
+                        card.classList.add('picked');
+                        if (pIdx === 0) p1Pick = char;
+                        else p2Pick = char;
+                    };
+                    grid.appendChild(card);
+                });
+            });
+        }
+
+        // ========================= GAME FLOW =========================
+        function goToSelect() {
+            STATE = 'select';
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('select-screen').classList.add('active');
+            document.getElementById('ui-overlay').classList.add('menu-active');
+            buildSelectScreen();
+        }
+
+        function beginFight() {
+            if (!p1Pick || !p2Pick) { alert('Both players must pick a wizard!'); return; }
+
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('ui-overlay').classList.remove('menu-active');
+            document.getElementById('hud').classList.add('active');
+
+            document.getElementById('hud-p1-name').textContent = p1Pick.name;
+            document.getElementById('hud-p2-name').textContent = p2Pick.name;
+
+            // Reset
+            fighters[0] = new Fighter(p1Pick, 0, W * 0.25);
+            fighters[1] = new Fighter(p2Pick, 1, W * 0.75);
+            projectiles = [];
+            particles = [];
+            beamLock = null;
+            shakeTimer = 0;
+            gameTime = 0;
+            winner = null;
+
+            initArena();
+
+            // Countdown
+            STATE = 'countdown';
+            const cdEl = document.getElementById('countdown');
+            cdEl.style.display = 'block';
+
+            let count = 3;
+            cdEl.textContent = count;
+            sfx('countdown');
+            const cdInterval = setInterval(() => {
+                count--;
+                if (count > 0) {
+                    cdEl.textContent = count;
+                    sfx('countdown');
+                } else if (count === 0) {
+                    cdEl.textContent = 'FIGHT!';
+                    cdEl.style.fontSize = '8vw';
+                    sfx('fight');
+                } else {
+                    clearInterval(cdInterval);
+                    cdEl.style.display = 'none';
+                    cdEl.style.fontSize = '12vw';
+                    STATE = 'fight';
+                }
+            }, 800);
+        }
+
+        function showVictory(winIdx) {
+            winner = winIdx;
+            STATE = 'victory';
+            setTimeout(() => {
+                document.getElementById('hud').classList.remove('active');
+                document.getElementById('ui-overlay').classList.add('menu-active');
+                // Build victory screen dynamically
+                const overlay = document.getElementById('ui-overlay');
+                // Remove old victory if exists
+                const old = document.getElementById('victory-screen');
+                if (old) old.remove();
+
+                const f = fighters[winIdx];
+                const loser = fighters[1 - winIdx];
+                const vs = document.createElement('div');
+                vs.id = 'victory-screen';
+                vs.className = 'screen active';
+                vs.style.cssText = 'background:radial-gradient(ellipse at center,#1a0a2e 0%,#000 100%);text-align:center;gap:20px;';
+                vs.innerHTML = `
+            <div style="font-size:4vw;animation:pulse 2s infinite">${f.char.name === 'Lord Voldemort' ? '💀' : '🏆'}</div>
+            <div style="font-family:Georgia,serif;font-size:3.5vw;font-weight:900;color:#ffd700;text-shadow:0 0 40px rgba(255,215,0,0.6)">${f.char.name.toUpperCase()} WINS!</div>
+            <div style="background:rgba(0,0,0,0.5);border:2px solid rgba(218,165,32,0.3);border-radius:12px;padding:20px 40px;font-size:1.1vw;line-height:2.2;color:#e0d5c1">
+                <div>❤️ HP Remaining: ${Math.floor(f.hp)}/${f.maxHp}</div>
+                <div>💀 Defeated: ${loser.char.name}</div>
+                <div>⏱️ Fight Duration: ${Math.floor(gameTime)}s</div>
+            </div>
+            <button class="btn" onclick="goToSelect();document.getElementById('victory-screen').remove()">DUEL AGAIN</button>
+            <button class="btn" style="font-size:1vw;padding:10px 30px" onclick="location.reload()">MAIN MENU</button>
+        `;
+                overlay.appendChild(vs);
+            }, 2000);
+        }
+
+        // ========================= MAIN GAME LOOP =========================
+        let lastTime = 0;
+        function gameLoop(timestamp) {
+            const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+            lastTime = timestamp;
+
+            if (STATE === 'fight' || STATE === 'countdown' || STATE === 'victory') {
+                gameTime += dt;
+
+                // ---- SHAKE ----
+                if (shakeTimer > 0) {
+                    shakeTimer -= dt;
+                    shakeX = (Math.random() - 0.5) * 12;
+                    shakeY = (Math.random() - 0.5) * 12;
+                } else {
+                    shakeX = 0; shakeY = 0;
+                }
+
+                X.save();
+                X.translate(shakeX, shakeY);
+
+                // ---- DRAW ARENA ----
+                drawArena();
+
+                // ---- UPDATE & DRAW FIGHTERS ----
+                if (STATE === 'fight') {
+                    for (const f of fighters) f.update(dt);
+                }
+
+                // Sort by Y for depth
+                const sorted = [...fighters].sort((a, b) => a.y - b.y);
+                for (const f of sorted) f.draw();
+
+                // ---- PROJECTILES ----
+                for (let i = projectiles.length - 1; i >= 0; i--) {
+                    projectiles[i].update(dt);
+                    if (!projectiles[i].alive) { projectiles.splice(i, 1); continue; }
+                    projectiles[i].draw();
+                }
+
+                // ---- BEAM LOCK ----
+                drawBeamLock();
+
+                // ---- PARTICLES ----
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    particles[i].update(dt);
+                    if (!particles[i].alive) { particles.splice(i, 1); continue; }
+                    particles[i].draw();
+                }
+
+                X.restore();
+
+                // ---- HUD ----
+                updateHUD();
+
+                // ---- CHECK VICTORY ----
+                if (STATE === 'fight') {
+                    for (let i = 0; i < 2; i++) {
+                        if (!fighters[i].alive && winner === null) {
+                            showVictory(1 - i);
+                        }
+                    }
+                }
+            } else {
+                // Title / Select - just draw some ambient particles on canvas
+                X.fillStyle = '#0a0412';
+                X.fillRect(0, 0, W, H);
+                for (const p of ambientParticles) {
+                    p.x += p.vx * 0.016;
+                    p.y += p.vy * 0.016;
+                    p.phase += 0.02;
+                    if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+                    if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+                    const a = p.alpha * (0.5 + Math.sin(p.phase) * 0.5);
+                    X.fillStyle = `rgba(200,180,150,${a})`;
+                    X.beginPath(); X.arc(p.x, p.y, p.size, 0, Math.PI * 2); X.fill();
+                }
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Init ambient for title
+        for (let i = 0; i < 40; i++) {
+            ambientParticles.push({
+                x: Math.random() * W, y: Math.random() * H,
+                vx: (Math.random() - 0.5) * 15, vy: (Math.random() - 0.5) * 10,
+                size: Math.random() * 2 + 0.5, alpha: Math.random() * 0.3 + 0.05, phase: Math.random() * Math.PI * 2
+            });
+        }
+
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+
+</html>
