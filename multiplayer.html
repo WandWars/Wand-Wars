@@ -336,8 +336,23 @@
                 // Check for room in URL (from rematch or shared link)
                 const params = new URLSearchParams(window.location.search);
                 const joinId = params.get('room');
-                if (joinId) {
-                    // Auto-join when room ID is in URL
+                const isRematchHost = params.get('host') === '1';
+
+                if (joinId && isRematchHost) {
+                    // Rematch initiator - become host immediately
+                    roomId = joinId;
+                    isHost = true;
+                    document.getElementById('lobby-status').textContent = 'Creating rematch room...';
+
+                    setupChannel(function () {
+                        const link = window.location.origin + window.location.pathname + '?room=' + roomId;
+                        document.getElementById('room-code').textContent = roomId;
+                        document.getElementById('share-link').textContent = link;
+                        document.getElementById('lobby-screen').classList.add('hidden');
+                        document.getElementById('host-waiting').classList.remove('hidden');
+                    });
+                } else if (joinId) {
+                    // Joining from shared link or rematch broadcast
                     document.getElementById('room-input').value = joinId;
                     roomId = joinId;
                     isHost = false;
@@ -350,20 +365,7 @@
                             event: 'player-joined',
                             payload: { playerId: myId }
                         });
-
-                        // Wait a moment for host to respond
-                        setTimeout(function () {
-                            // If no host responded, become the host
-                            if (document.getElementById('lobby-screen').style.display !== 'none' &&
-                                !document.getElementById('lobby-screen').classList.contains('hidden')) {
-                                isHost = true;
-                                const link = window.location.origin + window.location.pathname + '?room=' + roomId;
-                                document.getElementById('room-code').textContent = roomId;
-                                document.getElementById('share-link').textContent = link;
-                                document.getElementById('lobby-screen').classList.add('hidden');
-                                document.getElementById('host-waiting').classList.remove('hidden');
-                            }
-                        }, 2000);
+                        // Wait for host-welcome to proceed
                     });
                 } else {
                     document.getElementById('lobby-screen').classList.remove('hidden');

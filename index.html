@@ -1977,8 +1977,8 @@
                     payload: { newRoomId: newRoomId }
                 });
 
-                // Redirect self to new room
-                window.location.href = 'multiplayer.html?room=' + newRoomId;
+                // Redirect self to new room AS HOST
+                window.location.href = 'multiplayer.html?room=' + newRoomId + '&host=1';
             } else {
                 // Local mode: just restart with same characters
                 document.getElementById('victory-screen').remove();
