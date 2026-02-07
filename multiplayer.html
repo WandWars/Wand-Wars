@@ -530,19 +530,31 @@
                 var p1Name = CHARS.find(function (c) { return c.id === p1Char; }).name;
                 var p2Name = CHARS.find(function (c) { return c.id === p2Char; }).name;
 
-                setTimeout(function () {
-                    document.getElementById('starting-screen').innerHTML =
-                        '<h2 style="color:#ffd700">⚡ MATCH SET! ⚡</h2>' +
-                        '<p style="margin:20px 0;color:#aaa">Characters locked:</p>' +
+                // Show countdown then redirect to game
+                var countdown = 3;
+                var countdownEl = document.getElementById('starting-screen');
+
+                function updateCountdown() {
+                    countdownEl.innerHTML =
+                        '<h2 style="color:#ffd700">⚡ DUEL STARTING! ⚡</h2>' +
                         '<div style="display:flex;justify-content:center;gap:40px;margin:20px 0">' +
-                        '<div style="text-align:center"><span class="p1-label">' + (isHost ? 'You' : 'Opponent') + ':</span><br><strong>' + p1Name + '</strong></div>' +
+                        '<div style="text-align:center"><span class="p1-label">' + p1Name + '</span></div>' +
                         '<div style="font-size:2vw;color:#ffd700">VS</div>' +
-                        '<div style="text-align:center"><span class="p2-label">' + (isHost ? 'Opponent' : 'You') + ':</span><br><strong>' + p2Name + '</strong></div>' +
+                        '<div style="text-align:center"><span class="p2-label">' + p2Name + '</span></div>' +
                         '</div>' +
-                        '<p style="color:#66bb6a;margin-top:20px">✓ No duplicate characters!</p>' +
-                        '<button class="btn" style="margin-top:20px" onclick="location.reload()">NEW MATCH</button>' +
-                        '<button class="btn" onclick="location.href=\'index.html\'">MAIN MENU</button>';
-                }, 1500);
+                        '<div style="font-size:5vw;color:#ffd700;margin:30px 0">' + countdown + '</div>';
+
+                    if (countdown > 0) {
+                        countdown--;
+                        setTimeout(updateCountdown, 1000);
+                    } else {
+                        // Redirect to game with character info
+                        var gameUrl = 'index.html?p1=' + p1Char + '&p2=' + p2Char + '&room=' + roomId + '&host=' + (isHost ? '1' : '0');
+                        window.location.href = gameUrl;
+                    }
+                }
+
+                setTimeout(updateCountdown, 500);
             }
 
             function copyLink() {

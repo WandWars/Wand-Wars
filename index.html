@@ -1911,6 +1911,28 @@
             });
         }
 
+        // Check for multiplayer redirect (auto-start game)
+        (function checkMultiplayerStart() {
+            const params = new URLSearchParams(window.location.search);
+            const p1Id = params.get('p1');
+            const p2Id = params.get('p2');
+
+            if (p1Id && p2Id) {
+                // Find characters by ID
+                const char1 = CHARS.find(c => c.id === p1Id);
+                const char2 = CHARS.find(c => c.id === p2Id);
+
+                if (char1 && char2) {
+                    p1Pick = char1;
+                    p2Pick = char2;
+                    // Auto-start the fight
+                    setTimeout(function () {
+                        beginFight();
+                    }, 100);
+                }
+            }
+        })();
+
         requestAnimationFrame(gameLoop);
     </script>
 </body>
