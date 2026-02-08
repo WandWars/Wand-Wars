@@ -398,6 +398,12 @@
             <div class="cd-bar" id="hud-p2-cd"></div>
         </div>
     </div>
+    <div id="controls-guide"
+        style="position:fixed;bottom:10px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.7);border:1px solid rgba(218,165,32,0.4);border-radius:8px;padding:8px 16px;font-size:12px;color:#e0d5c1;z-index:100;display:none;text-align:center">
+        <span style="color:#ffd700">⌨ CONTROLS:</span>
+        <span style="margin-left:10px">🎮 MOVE: ← → ↑ ↓</span>
+        <span style="margin-left:10px">⚡ SPELLS: C V B SPACE</span>
+    </div>
     <div id="countdown"></div>
 
     <script>
@@ -658,24 +664,15 @@
                     const speed = 320;
                     let mx = 0, my = 0;
 
-                    // In online mode: only control your own character with arrows
-                    // In local mode: P1 uses WASD, P2 uses arrows
+                    // Only control your own character
                     const isMyCharacter = isOnlineMode ? (this.pNum === myPlayerNum) : true;
 
                     if (isMyCharacter) {
-                        if (isOnlineMode || this.pNum === 1) {
-                            // Online mode OR local P2: use arrow keys
-                            if (keys['arrowleft']) mx = -1;
-                            if (keys['arrowright']) mx = 1;
-                            if (keys['arrowup']) my = -1;
-                            if (keys['arrowdown']) my = 1;
-                        } else {
-                            // Local P1: use WASD
-                            if (keys['a'] || keys['KeyA']) mx = -1;
-                            if (keys['d'] || keys['KeyD']) mx = 1;
-                            if (keys['w'] || keys['KeyW']) my = -1;
-                            if (keys['s'] || keys['KeyS']) my = 1;
-                        }
+                        // Everyone uses arrow keys for movement
+                        if (keys['arrowleft']) mx = -1;
+                        if (keys['arrowright']) mx = 1;
+                        if (keys['arrowup']) my = -1;
+                        if (keys['arrowdown']) my = 1;
                     }
 
                     if (mx || my) {
@@ -692,16 +689,12 @@
                 this.x = Math.max(30, Math.min(W - 30, this.x));
                 this.y = Math.max(H * 0.45, Math.min(H * 0.85, this.y));
 
-                // Spell input
+                // Spell input - C, V, B, Space for all modes
                 if (this.state !== 'hit' && this.state !== 'dead') {
-                    // In online mode: only control your own character with JKL;
-                    // In local mode: P1 uses QERF, P2 uses JKL;
                     const isMyCharacter = isOnlineMode ? (this.pNum === myPlayerNum) : true;
 
                     if (isMyCharacter) {
-                        const spellKeys = (isOnlineMode || this.pNum === 1)
-                            ? ['j', 'k', 'l', ';']
-                            : ['q', 'e', 'r', 'f'];
+                        const spellKeys = ['c', 'v', 'b', ' '];
                         for (let i = 0; i < 4; i++) {
                             if (keys[spellKeys[i]] && this.cooldowns[i] <= 0) {
                                 this.castSpellAction(i);
@@ -1607,7 +1600,7 @@
                 // Cooldown bars
                 const cdBar = document.getElementById(`hud-p${i + 1}-cd`);
                 cdBar.innerHTML = '';
-                const spellKeys = i === 0 ? ['Q', 'E', 'R', 'F'] : ['J', 'K', 'L', ';'];
+                const spellKeys = ['C', 'V', 'B', '⎵'];  // Space shown as symbol
                 const spellColors = ['#ef5350', '#ff9800', '#4fc3f7', '#ffd700'];
                 for (let s = 0; s < 4; s++) {
                     const spell = f.char.spells[s];
@@ -1781,6 +1774,7 @@
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById('ui-overlay').classList.remove('menu-active');
             document.getElementById('hud').classList.add('active');
+            document.getElementById('controls-guide').style.display = 'block';
 
             // HUD names - swap for joiner to match mirrored view
             if (isOnlineMode && myPlayerNum === 1) {
