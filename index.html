@@ -1782,12 +1782,25 @@
             document.getElementById('ui-overlay').classList.remove('menu-active');
             document.getElementById('hud').classList.add('active');
 
-            document.getElementById('hud-p1-name').textContent = p1Pick.name;
-            document.getElementById('hud-p2-name').textContent = p2Pick.name;
+            // HUD names - swap for joiner to match mirrored view
+            if (isOnlineMode && myPlayerNum === 1) {
+                document.getElementById('hud-p1-name').textContent = p2Pick.name; // My char on left
+                document.getElementById('hud-p2-name').textContent = p1Pick.name; // Opponent on right
+            } else {
+                document.getElementById('hud-p1-name').textContent = p1Pick.name;
+                document.getElementById('hud-p2-name').textContent = p2Pick.name;
+            }
 
-            // Reset
-            fighters[0] = new Fighter(p1Pick, 0, W * 0.25);
-            fighters[1] = new Fighter(p2Pick, 1, W * 0.75);
+            // Reset - in online mode, swap positions so each player sees themselves on left
+            if (isOnlineMode && myPlayerNum === 1) {
+                // Joiner: swap positions - my char (P2) on left, opponent (P1) on right
+                fighters[0] = new Fighter(p1Pick, 0, W * 0.75); // Host's char on right
+                fighters[1] = new Fighter(p2Pick, 1, W * 0.25); // My char on left
+            } else {
+                // Host or local mode: normal positions
+                fighters[0] = new Fighter(p1Pick, 0, W * 0.25);
+                fighters[1] = new Fighter(p2Pick, 1, W * 0.75);
+            }
             projectiles = [];
             particles = [];
             beamLock = null;
@@ -1957,10 +1970,17 @@
             const f = fighters[opponentNum];
             if (!f) return;
 
+            // Mirror position for joiner (opponent's left becomes our right)
+            let targetX = remoteState.x;
+            if (myPlayerNum === 1) {
+                // Joiner: mirror X position (flip around center)
+                targetX = W - remoteState.x;
+            }
+
             // Smoothly interpolate position
-            f.x += (remoteState.x - f.x) * 0.3;
+            f.x += (targetX - f.x) * 0.3;
             f.y += (remoteState.y - f.y) * 0.3;
-            f.facing = remoteState.facing;
+            f.facing = myPlayerNum === 1 ? -remoteState.facing : remoteState.facing;
             f.state = remoteState.state;
             f.shield.active = remoteState.shieldActive;
         }
